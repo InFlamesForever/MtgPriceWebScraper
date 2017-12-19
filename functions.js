@@ -1,8 +1,9 @@
 const request = require("tinyreq");
 const cheerio = require("cheerio");
-let fs = require('fs');
-let parse = require('csv-parse');
+const fs = require('fs');
+const parse = require('csv-parse');
 const MTGCard = require("./MTGCard.js");
+const jsonQuery = require('json-query');
 
 module.exports = {
 
@@ -18,11 +19,11 @@ module.exports = {
         return new Promise(
             function (fulfill, reject) {
                 try {
-                    let url = "https://www.mtggoldfish.com/price/" + setFullName.replace(/ /g, "+");
-                    if (isFoil) {
+                    let url = "https://www.mtggoldfish.com/price/" + setFullName;
+                    if (isFoil === 'Yes') {
                         url += ":Foil"
                     }
-                    url += "/" + cardName.replace(/ /g, "+");
+                    url += "/" + cardName.replace(/ /g, "+").replace(/'/g, "");
 
                     request(url, function (err, body) {
                         let $ = cheerio.load(body);
@@ -48,43 +49,66 @@ module.exports = {
 
     /**
      * This function scrapes the https://mtg.gamepedia.com/Template:List_of_Magic_sets
-     * web page for MTG sets, and creates a json array of their set name and their set
+     * web page for MTG sets, and creates a json file of their set name and their set
      * abbreviation.
      *
      * @returns {Promise<Array>}
      */
-    getFullSetJson() {
-        return new Promise(
-            function (fulfill, reject) {
-                let jsonArr = {}, key = "Name Abr Pair";
-                jsonArr[key] = [];
-                try {
-                    request("https://mtg.gamepedia.com/Template:List_of_Magic_sets", function (err, body) {
-                        let $ = cheerio.load(body);
+    createAbrToFullNameMappingJson(callback) {
+        try {
+            let file = fs.readFileSync('specialSetCases.json', 'utf8', function (err) {
+                if (err) {
+                    callback(null, "error while reading file");
+                }
+                else {
+                    callback(null, "file read");
+                }
+            });
+            let specialCasesJson = JSON.parse(file);
+            let jsonArr = {}, key = "nameAbrevPair";
+            jsonArr[key] = [];
 
-                        $(".wikitable tr").each(function (index, value) {
-                            let fullName = "";
-                            let abr = "";
-                            $('td', this).each(function (index, value) {
-                                if (index === 1) {
-                                    fullName = $(this).text().trim()
-                                }
-                                else if (index === 3) {
-                                    abr = $(this).text().trim()
-                                }
-                            });
-                            jsonArr[key].push({
-                                abr: abr,
-                                fullName: fullName
-                            });
-                        });
-                        fulfill(jsonArr);
+            request("https://mtg.gamepedia.com/Template:List_of_Magic_sets", function (err, body) {
+                let $ = cheerio.load(body);
+
+                $(".wikitable tr").each(function () {
+                    let fullName = "";
+                    let abr = "";
+                    $('td', this).each(function (index) {
+                        if (index === 1) {
+                            fullName = $(this).text().trim()
+                        }
+                        else if (index === 3) {
+                            abr = $(this).text().trim()
+                        }
                     });
-                }
-                catch (ex) {
-                    reject(ex)
-                }
-            })
+
+                    if (fullName !== '' && abr !== '') {
+                        let foundName = jsonQuery('nameAbrevPair[abr=' + abr + '].fullName', {
+                            data: specialCasesJson
+                        });
+                        if (foundName.value !== null) {
+                            fullName = foundName.value
+                        }
+                        else {
+                            fullName = fullName.replace(/ *\([^)]*\) */g, "").trim()
+                                .replace(/ /g, "+").replace(/'/g, "")
+                                .replace(/:/g, "");
+                        }
+                        jsonArr[key].push({
+                            abr: abr,
+                            fullName: fullName
+                        });
+                    }
+                });
+                let wstream = fs.createWriteStream('mtgSetAbrToFullname.json');
+                wstream.write(JSON.stringify(jsonArr));
+                wstream.end();
+            });
+        }
+        catch (ex) {
+            callback(ex)
+        }
     },
 
     /**
@@ -96,12 +120,12 @@ module.exports = {
     getCardsJsonFromCSV(csvFilePath) {
         return new Promise(
             function (fulfill, reject) {
-                let cardJson = {}, key = "Cards"; //0,1,4,6
+                let cardJson = {}, key = "cards"; //0,1,4,6
                 cardJson[key] = [];
                 try {
                     fs.createReadStream(csvFilePath)
                         .pipe(parse({delimiter: ','}))
-                        .on('data', function(csvrow) {
+                        .on('data', function (csvrow) {
                             cardJson[key].push({
                                 name: csvrow[0],
                                 quantity: csvrow[1],
@@ -113,7 +137,7 @@ module.exports = {
                                 totalPaper: 0
                             });
                         })
-                        .on('end',function() {
+                        .on('end', function () {
                             //do something with csvData
                             fulfill(cardJson)
                         });
