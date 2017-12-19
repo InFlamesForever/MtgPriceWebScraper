@@ -1,5 +1,7 @@
 const request = require("tinyreq");
 const cheerio = require("cheerio");
+let fs = require('fs');
+let parse = require('csv-parse');
 const MTGCard = require("./MTGCard.js");
 
 module.exports = {
@@ -78,6 +80,43 @@ module.exports = {
                         });
                         fulfill(jsonArr);
                     });
+                }
+                catch (ex) {
+                    reject(ex)
+                }
+            })
+    },
+
+    /**
+     * This function takes in the file path to a csv output from MTGO
+     * and converts it into a json array
+     *
+     * @returns {Promise<Array>}
+     */
+    getCardsJsonFromCSV(csvFilePath) {
+        return new Promise(
+            function (fulfill, reject) {
+                let cardJson = {}, key = "Cards"; //0,1,4,6
+                cardJson[key] = [];
+                try {
+                    fs.createReadStream(csvFilePath)
+                        .pipe(parse({delimiter: ','}))
+                        .on('data', function(csvrow) {
+                            cardJson[key].push({
+                                name: csvrow[0],
+                                quantity: csvrow[1],
+                                setAbr: csvrow[4],
+                                isFoil: csvrow[6],
+                                onlinePrice: 0,
+                                paperPrice: 0,
+                                totalOnline: 0,
+                                totalPaper: 0
+                            });
+                        })
+                        .on('end',function() {
+                            //do something with csvData
+                            fulfill(cardJson)
+                        });
                 }
                 catch (ex) {
                     reject(ex)
