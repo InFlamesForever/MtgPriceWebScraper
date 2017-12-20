@@ -4,26 +4,25 @@ const fs = require('fs');
 const parse = require('csv-parse');
 const MTGCard = require("./MTGCard.js");
 const jsonQuery = require('json-query');
+const json2csv = require('json2csv');
 
 module.exports = {
 
     /**
      * Method for getting a cards prices from MTG Goldfish
      *
-     * @param cardName the full card name
-     * @param setAbr the abbreviated set name
+     * @param card the card json object
      * @param setFullName the full set name
-     * @param isFoil whether the card you're looking up is foil or not
      */
-    getCardFromMtgGoldfish(cardName, setAbr, setFullName, isFoil) {
+    getCardFromMtgGoldfish(card, setFullName) {
         return new Promise(
             function (fulfill, reject) {
                 try {
                     let url = "https://www.mtggoldfish.com/price/" + setFullName;
-                    if (isFoil === 'Yes') {
+                    if (card.isFoil === 'Yes') {
                         url += ":Foil"
                     }
-                    url += "/" + cardName.replace(/ /g, "+").replace(/'/g, "");
+                    url += "/" + card.name.replace(/ /g, "+").replace(/'/g, "");
 
                     request(url, function (err, body) {
                         let $ = cheerio.load(body);
@@ -35,8 +34,10 @@ module.exports = {
                                 divInfo.push(node);
                             }
                         });
-
-                        let card = new MTGCard(cardName, setAbr, setFullName, divInfo[0], divInfo[1]);
+                        card.onlinePrice = divInfo[0];
+                        card.paperPrice = divInfo[1];
+                        card.totalOnline = divInfo[0] * card.quantity;
+                        card.totalPaper = divInfo[1] * card.quantity;
                         fulfill(card);
                     })
                 }
@@ -146,5 +147,47 @@ module.exports = {
                     reject(ex)
                 }
             })
+    },
+
+    cards2csv(cardsJson)
+    {
+        let fields = ['name', 'quantity', 'setAbr', 'isFoil',
+            'onlinePrice', 'paperPrice', 'totalOnline', 'totalPaper'];
+        /*cards json example= [
+            {
+                name: ,
+                quantity: ,
+                setAbr: ,
+                isFoil: ,
+                onlinePrice: ,
+                paperPrice: ,
+                totalOnline: ,
+                totalPaper:
+            }
+        ];*/
+        let csv = json2csv({ data: cardsJson, fields: fields });
+
+        fs.writeFile('out.csv', csv, function(err) {
+            if (err) throw err;
+            console.log('file saved');
+        });
+    },
+
+    timeBasedCardSearch(card, index, jsonOfSets) {
+        return new Promise(
+            function (fulfill, reject) {
+                try {
+                    setTimeout(function () {
+                        let result = jsonQuery('nameAbrevPair[abr=' + card.setAbr + '].fullName', {
+                            data: jsonOfSets
+                        });
+                        fulfill(module.exports.getCardFromMtgGoldfish(card, result.value))
+                    }, 2000 * index)
+                }
+                catch (ex) {
+                    reject(ex)
+                }
+            })
+
     }
 };
