@@ -1,20 +1,30 @@
-{
-  "nameAbrevPair":[
-    {
-      "abr":"LEA (1E)",
-      "fullName":"Limited+Edition+Alpha"
-    },
-    {
-      "abr":"LEB (2E)",
-      "fullName":"Limited+Edition+Beta"
-    },
-    {
-      "abr":"C13",
-      "fullName":"Commander+2013+Edition"
-    },
-    {
-      "abr":"M15",
-      "fullName":"Magic+2015+Core+Set"
-    }
-  ]
-}
+[
+  {
+    "abr":"LEA (1E)",
+    "fullName":"Limited+Edition+Alpha"
+  },
+  {
+    "abr":"LEB (2E)",
+    "fullName":"Limited+Edition+Beta"
+  },
+  {
+    "abr":"C13",
+    "fullName":"Commander+2013+Edition"
+  },
+  {
+    "abr":"M15",
+    "fullName":"Magic+2015+Core+Set"
+  },
+  {
+    "abr":"PRM",
+    "fullName":"Promotional"
+  },
+  {
+    "abr":"UL",
+    "fullName":"Urzas+Legacy"
+  },
+  {
+    "abr":"UZ",
+    "fullName":"Urzas+Saga"
+  }
+]

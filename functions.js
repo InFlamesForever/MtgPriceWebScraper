@@ -2,7 +2,6 @@ const request = require("tinyreq");
 const cheerio = require("cheerio");
 const fs = require('fs');
 const parse = require('csv-parse');
-const MTGCard = require("./MTGCard.js");
 const jsonQuery = require('json-query');
 const json2csv = require('json2csv');
 
@@ -18,12 +17,15 @@ module.exports = {
         return new Promise(
             function (fulfill, reject) {
                 try {
+                    //Create the URL in format https://www.mtggoldfish.com/price/SET(:FOIL)/CARD
                     let url = "https://www.mtggoldfish.com/price/" + setFullName;
                     if (card.isFoil === 'Yes') {
                         url += ":Foil"
                     }
-                    url += "/" + card.name.replace(/ /g, "+").replace(/'/g, "");
+                    url += "/" + card.name.replace(/ /g, "+").replace(/'/g, "")
+                        .replace(/,/g, "").replace(/\//g, "+");
 
+                    //Go to the website and get the prices
                     request(url, function (err, body) {
                         let $ = cheerio.load(body);
                         let priceBoxDiv = $(".price-box-container").text().split("\n");
@@ -34,10 +36,17 @@ module.exports = {
                                 divInfo.push(node);
                             }
                         });
+
+                        //Add card info to the json
                         card.onlinePrice = divInfo[0];
                         card.paperPrice = divInfo[1];
-                        card.totalOnline = divInfo[0] * card.quantity;
-                        card.totalPaper = divInfo[1] * card.quantity;
+                        if(card.onlinePrice !== "") {
+                            card.totalOnline = divInfo[0] * card.quantity;
+                        }
+                        if(card.paperPrice !== "") {
+                            card.totalPaper = divInfo[1] * card.quantity;
+                        }
+                        console.log(card.name);
                         fulfill(card);
                     })
                 }
@@ -66,8 +75,7 @@ module.exports = {
                 }
             });
             let specialCasesJson = JSON.parse(file);
-            let jsonArr = {}, key = "nameAbrevPair";
-            jsonArr[key] = [];
+            let setToAbrPairsJson = [];
 
             request("https://mtg.gamepedia.com/Template:List_of_Magic_sets", function (err, body) {
                 let $ = cheerio.load(body);
@@ -84,32 +92,55 @@ module.exports = {
                         }
                     });
 
-                    if (fullName !== '' && abr !== '') {
-                        let foundName = jsonQuery('nameAbrevPair[abr=' + abr + '].fullName', {
-                            data: specialCasesJson
-                        });
-                        if (foundName.value !== null) {
-                            fullName = foundName.value
-                        }
-                        else {
-                            fullName = fullName.replace(/ *\([^)]*\) */g, "").trim()
+                    if (fullName !== "" && abr !== "") {
+                        fullName = fullName.replace(/ *\([^)]*\) */g, "").trim()
                                 .replace(/ /g, "+").replace(/'/g, "")
                                 .replace(/:/g, "");
-                        }
-                        jsonArr[key].push({
+                        abr = abr.replace(/ *\([^)]*\) */g, "").trim();
+                        setToAbrPairsJson.push({
                             abr: abr,
                             fullName: fullName
                         });
                     }
                 });
+                module.exports.addSpecialCases(setToAbrPairsJson, specialCasesJson);
                 let wstream = fs.createWriteStream('mtgSetAbrToFullname.json');
-                wstream.write(JSON.stringify(jsonArr));
+                wstream.write(JSON.stringify(setToAbrPairsJson));
                 wstream.end();
             });
         }
         catch (ex) {
             callback(ex)
         }
+    },
+
+    /**
+     * This function takes in two json objects both consisting of
+     * set-name to abbreviation pairs. It will iterate through the specialCasesJson
+     * and then search the setToAbrPairsJson for each pair, if the pair is found
+     * it is replaced with the special case, if it is not then the special case is added.
+     * @param setToAbrPairsJson
+     * @param specialCasesJson
+     */
+    addSpecialCases(setToAbrPairsJson, specialCasesJson)
+    {
+        specialCasesJson.map(function(pair){
+            //Search Json for special case pair
+            let foundPair = jsonQuery('[abr=' + pair.abr + ']', {
+                data: setToAbrPairsJson
+            });
+            //If special case is found, replace it with special case values
+            if(foundPair.value !== null)
+            {
+                console.log(foundPair.value);
+                foundPair.value.fullName = pair.fullName
+            }
+            //If the special case is not found add it
+            else
+            {
+                setToAbrPairsJson.push(pair)
+            }
+        })
     },
 
     /**
@@ -173,12 +204,21 @@ module.exports = {
         });
     },
 
+    /**
+     * Delay between each call to MTG Goldfish of 2 seconds so that
+     * they don't block the bot for spamming their servers
+     *
+     * @param card the card json
+     * @param index the number of the iteration
+     * @param jsonOfSets json of the set to abbreviation pairs
+     * @returns {Promise<any>}
+     */
     timeBasedCardSearch(card, index, jsonOfSets) {
         return new Promise(
             function (fulfill, reject) {
                 try {
                     setTimeout(function () {
-                        let result = jsonQuery('nameAbrevPair[abr=' + card.setAbr + '].fullName', {
+                        let result = jsonQuery('[abr=' + card.setAbr + '].fullName', {
                             data: jsonOfSets
                         });
                         fulfill(module.exports.getCardFromMtgGoldfish(card, result.value))

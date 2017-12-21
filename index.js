@@ -1,5 +1,4 @@
 const functions = require("./functions.js");
-const jsonQuery = require('json-query');
 const fs = require('fs');
 
 
@@ -42,7 +41,8 @@ async function test() {
                         try {
                             if (card.name === 'Mountain' || card.name === 'Island' || card.name === 'Plains'
                                 || card.name === 'Swamp' || card.name === 'Forest') {
-                                console.log("Skipping: " + card.name)
+                                console.log("Skipping: " + card.name);
+                                fulfill(card)
                             }
                             else {
                                 fulfill(functions.timeBasedCardSearch(card, index, jsonOfSets))
@@ -54,6 +54,7 @@ async function test() {
                         }
                     })
             })).then(function (x) {
+                console.log("done");
                 return x
             }).catch(function (err) {
                 console.log(err)
@@ -63,9 +64,13 @@ async function test() {
 
 }
 test().then(function (x) {
-    let outputJson = [{}];
+    let outputJson = [];
     x.forEach(card =>{
-        outputJson.push(card)
+        //Remove basic lands from output as they're effectively worthless
+        if (card.name !== 'Mountain' && card.name !== 'Island' && card.name !== 'Plains'
+            && card.name !== 'Swamp' && card.name !== 'Forest') {
+            outputJson.push(card)
+        }
     });
     functions.cards2csv(outputJson)
 });
