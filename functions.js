@@ -80,27 +80,51 @@ module.exports = {
             request("https://mtg.gamepedia.com/Template:List_of_Magic_sets", function (err, body) {
                 let $ = cheerio.load(body);
 
-                $(".wikitable tr").each(function () {
+                $(".wikitable tr").each(function ()
+                {
                     let fullName = "";
                     let abr = "";
-                    $('td', this).each(function (index) {
-                        if (index === 1) {
+                    $('td', this).each(function (index)
+                    {
+                        if (index === 1)
+                        {
                             fullName = $(this).text().trim()
                         }
-                        else if (index === 3) {
+                        else if (index === 3)
+                        {
                             abr = $(this).text().trim()
                         }
                     });
 
-                    if (fullName !== "" && abr !== "") {
+                    if (fullName !== "" && abr !== "")
+                    {
                         fullName = fullName.replace(/ *\([^)]*\) */g, "").trim()
                                 .replace(/ /g, "+").replace(/'/g, "")
-                                .replace(/:/g, "");
-                        abr = abr.replace(/ *\([^)]*\) */g, "").trim();
-                        setToAbrPairsJson.push({
-                            abr: abr,
-                            fullName: fullName
-                        });
+                                .replace(/:/g, "").replace(/./g, "");
+
+                        let parts = abr.split(/[()]/);
+                        if(parts.length === 1)
+                        {
+                            setToAbrPairsJson.push({
+                                abr: parts[0].trim(),
+                                fullName: fullName
+                            });
+                        }
+                        else if(parts.length === 3)
+                        {
+                            setToAbrPairsJson.push({
+                                abr: parts[0].trim(),
+                                fullName: fullName
+                            });
+                            setToAbrPairsJson.push({
+                                abr: parts[1].trim(),
+                                fullName: fullName
+                            });
+                        }
+                        else
+                        {
+                            console.log("Abr is: " + abr + " parts is: " + parts)
+                        }
                     }
                 });
                 module.exports.addSpecialCases(setToAbrPairsJson, specialCasesJson);

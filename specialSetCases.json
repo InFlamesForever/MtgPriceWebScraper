@@ -1,30 +1,90 @@
 [
   {
-    "abr":"LEA (1E)",
-    "fullName":"Limited+Edition+Alpha"
+    "abr": "LEA",
+    "fullName": "Limited+Edition+Alpha"
   },
   {
-    "abr":"LEB (2E)",
-    "fullName":"Limited+Edition+Beta"
+    "abr": "1E",
+    "fullName": "Limited+Edition+Alpha"
   },
   {
-    "abr":"C13",
-    "fullName":"Commander+2013+Edition"
+    "abr": "LEB",
+    "fullName": "Limited+Edition+Beta"
   },
   {
-    "abr":"M15",
-    "fullName":"Magic+2015+Core+Set"
+    "abr": "2E",
+    "fullName": "Limited+Edition+Beta"
   },
   {
-    "abr":"PRM",
-    "fullName":"Promotional"
+    "abr": "C13",
+    "fullName": "Commander+2013+Edition"
   },
   {
-    "abr":"UL",
-    "fullName":"Urzas+Legacy"
+    "abr": "M14",
+    "fullName": "Magic+2014+Core+Set"
   },
   {
-    "abr":"UZ",
-    "fullName":"Urzas+Saga"
+    "abr": "M15",
+    "fullName": "Magic+2015+Core+Set"
+  },
+  {
+    "abr": "PRM",
+    "fullName": "Promotional"
+  },
+  {
+    "abr": "UL",
+    "fullName": "Urzas+Legacy"
+  },
+  {
+    "abr": "UZ",
+    "fullName": "Urzas+Saga"
+  },
+  {
+    "abr": "10E",
+    "fullName": "Tenth+Edition"
+  },
+  {
+    "abr": "7E",
+    "fullName": "Seventh+Edition"
+  },
+  {
+    "abr": "9ED",
+    "fullName": "Ninth+Edition"
+  },
+  {
+    "abr": "8ED",
+    "fullName": "Eighth+Edition"
+  },
+  {
+    "abr": "TSB",
+    "fullName": "Time+Spiral"
+  },
+  {
+    "abr": "TSP",
+    "fullName": "Time+Spiral"
+  },
+  {
+    "abr": "TD0",
+    "fullName": "Theme+Deck+Set"
+  },
+  {
+    "abr": "TD0",
+    "fullName": "Theme+Deck+Set"
+  },
+  {
+    "abr": "MM3",
+    "fullName": "Modern+Masters+2017+Edition"
+  },
+  {
+    "abr": "PZ1",
+    "fullName": "Treasure+Chest"
+  },
+  {
+    "abr": "PZ2",
+    "fullName": "Treasure+Chest"
+  },
+  {
+    "abr": "MS3",
+    "fullName": "Amonkhet+Invocations"
   }
 ]
