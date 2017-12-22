@@ -100,7 +100,7 @@ module.exports = {
                     {
                         fullName = fullName.replace(/ *\([^)]*\) */g, "").trim()
                                 .replace(/ /g, "+").replace(/'/g, "")
-                                .replace(/:/g, "").replace(/./g, "");
+                                .replace(/:/g, "").replace(/\./g, "");
 
                         let parts = abr.split(/[()]/);
                         if(parts.length === 1)
